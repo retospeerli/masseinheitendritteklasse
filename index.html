@@ -230,21 +230,84 @@
 </div>
 
 <script>
+  // --- Konfiguration ---
   const TOTAL_QUESTIONS = 20;
   const TIME_PER_QUESTION = 15; // Sekunden
   const MAX_VALUE = 9999;
 
+  // Definition der möglichen Umrechnungen (nur ganze Zahlen!)
+  // op: 'mul' (to = from * factor) oder 'div' (to = from / factor)
+  const CONVERSIONS = {
+    length: [
+      // km <-> m
+      { from: 'km', to: 'm',   op: 'mul', factor: 1000, min: 1,    max: 9,    step: 1,    label: 'Längen – km in m' },
+      { from: 'm',  to: 'km',  op: 'div', factor: 1000, min: 1000, max: 9000, step: 1000, label: 'Längen – m in km' },
+
+      // cm <-> m
+      { from: 'cm', to: 'm',   op: 'div', factor: 100,  min: 100, max: 9900, step: 100,  label: 'Längen – cm in m' },
+      { from: 'm',  to: 'cm',  op: 'mul', factor: 100,  min: 1,   max: 99,   step: 1,    label: 'Längen – m in cm' },
+
+      // dm <-> m
+      { from: 'dm', to: 'm',   op: 'div', factor: 10,   min: 10,  max: 9990, step: 10,   label: 'Längen – dm in m' },
+      { from: 'm',  to: 'dm',  op: 'mul', factor: 10,   min: 1,   max: 999,  step: 1,    label: 'Längen – m in dm' },
+
+      // mm <-> m
+      { from: 'mm', to: 'm',   op: 'div', factor: 1000, min: 1000, max: 9000, step: 1000, label: 'Längen – mm in m' },
+      { from: 'm',  to: 'mm',  op: 'mul', factor: 1000, min: 1,   max: 9,    step: 1,    label: 'Längen – m in mm' },
+
+      // dm <-> cm
+      { from: 'dm', to: 'cm',  op: 'mul', factor: 10,   min: 1,   max: 999,  step: 1,    label: 'Längen – dm in cm' },
+      { from: 'cm', to: 'dm',  op: 'div', factor: 10,   min: 10,  max: 9990, step: 10,   label: 'Längen – cm in dm' },
+
+      // mm <-> cm
+      { from: 'mm', to: 'cm',  op: 'div', factor: 10,   min: 10,  max: 9990, step: 10,   label: 'Längen – mm in cm' },
+      { from: 'cm', to: 'mm',  op: 'mul', factor: 10,   min: 1,   max: 999,  step: 1,    label: 'Längen – cm in mm' },
+
+      // dm <-> mm
+      { from: 'dm', to: 'mm',  op: 'mul', factor: 100,  min: 1,   max: 99,   step: 1,    label: 'Längen – dm in mm' },
+      { from: 'mm', to: 'dm',  op: 'div', factor: 100,  min: 100, max: 9900, step: 100,  label: 'Längen – mm in dm' }
+    ],
+    weight: [
+      // t <-> kg
+      { from: 't',  to: 'kg',  op: 'mul', factor: 1000, min: 1,   max: 9,    step: 1,    label: 'Gewicht – t in kg' },
+      { from: 'kg', to: 't',   op: 'div', factor: 1000, min: 1000, max: 9000, step: 1000, label: 'Gewicht – kg in t' },
+
+      // g <-> kg
+      { from: 'kg', to: 'g',   op: 'mul', factor: 1000, min: 1,   max: 9,    step: 1,    label: 'Gewicht – kg in g' },
+      { from: 'g',  to: 'kg',  op: 'div', factor: 1000, min: 1000, max: 9000, step: 1000, label: 'Gewicht – g in kg' }
+    ],
+    volume: [
+      // l <-> dl
+      { from: 'l',  to: 'dl',  op: 'mul', factor: 10,   min: 1,   max: 999,  step: 1,    label: 'Volumen – l in dl' },
+      { from: 'dl', to: 'l',   op: 'div', factor: 10,   min: 10,  max: 9990, step: 10,   label: 'Volumen – dl in l' },
+
+      // l <-> cl
+      { from: 'l',  to: 'cl',  op: 'mul', factor: 100,  min: 1,   max: 99,   step: 1,    label: 'Volumen – l in cl' },
+      { from: 'cl', to: 'l',   op: 'div', factor: 100,  min: 100, max: 9900, step: 100,  label: 'Volumen – cl in l' },
+
+      // l <-> ml
+      { from: 'l',  to: 'ml',  op: 'mul', factor: 1000, min: 1,   max: 9,    step: 1,    label: 'Volumen – l in ml' },
+      { from: 'ml', to: 'l',   op: 'div', factor: 1000, min: 1000, max: 9000, step: 1000, label: 'Volumen – ml in l' },
+
+      // ml <-> dl
+      { from: 'dl', to: 'ml',  op: 'mul', factor: 100,  min: 1,   max: 99,   step: 1,    label: 'Volumen – dl in ml' },
+      { from: 'ml', to: 'dl',  op: 'div', factor: 100,  min: 100, max: 9900, step: 100,  label: 'Volumen – ml in dl' }
+    ]
+  };
+
+  // --- Statusvariablen ---
   let selectedCategory = null;   // 'length' | 'weight' | 'volume'
   let currentQuestion = null;
 
-  let questionsDone = 0;         // wie viele Aufgaben gewertet
+  let questionsDone = 0;
   let correctAnswers = 0;
   let wrongAnswers = 0;
-  let usedQuestions = [];        // Vermeidung von Wiederholungen
+  let usedQuestions = [];        // Strings, um Wiederholung zu vermeiden
 
   let timeLeft = TIME_PER_QUESTION;
   let timerId = null;
 
+  // --- DOM Referenzen ---
   const startScreen = document.getElementById('start-screen');
   const quizScreen = document.getElementById('quiz-screen');
   const resultScreen = document.getElementById('result-screen');
@@ -268,9 +331,289 @@
   const finishBtn = document.getElementById('finish-btn');
   const resultSummary = document.getElementById('result-summary');
 
-  // Definition der möglichen Umrechnungen
-  // op: 'mul' (to = from * factor) oder 'div' (to = from / factor)
-  const CONVERSIONS = {
-    length: [
-      // km <-> m
-      { from: 'km', to: 'm',   op: 'mul', factor: 1000, min: 1, ma
+  // --- Kategorie-Auswahl klickbar machen ---
+  choiceGrid.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cat = btn.getAttribute('data-category');
+      if (selectedCategory === cat) {
+        selectedCategory = null;
+      } else {
+        selectedCategory = cat;
+      }
+
+      choiceGrid.querySelectorAll('.choice-btn').forEach(b => {
+        if (b.getAttribute('data-category') === selectedCategory) {
+          b.classList.add('selected');
+        } else {
+          b.classList.remove('selected');
+        }
+      });
+
+      updateSelectedInfo();
+    });
+  });
+
+  function updateSelectedInfo() {
+    if (!selectedCategory) {
+      selectedInfo.textContent = 'Keine Kategorie ausgewählt.';
+      startBtn.disabled = true;
+      return;
+    }
+    let text = '';
+    if (selectedCategory === 'length') text = 'Ausgewählte Kategorie: Längen';
+    if (selectedCategory === 'weight') text = 'Ausgewählte Kategorie: Gewicht';
+    if (selectedCategory === 'volume') text = 'Ausgewählte Kategorie: Volumen';
+    selectedInfo.textContent = text;
+    startBtn.disabled = false;
+  }
+
+  // --- Events ---
+  startBtn.addEventListener('click', startTraining);
+  submitBtn.addEventListener('click', checkAnswer);
+
+  restartBtn.addEventListener('click', () => {
+    stopTimer();
+    quizScreen.classList.add('hidden');
+    resultScreen.classList.add('hidden');
+    startTraining(); // gleiche Kategorie, neuer Durchlauf
+  });
+
+  finishBtn.addEventListener('click', () => {
+    // LearningView informieren
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage('AppSolved', '*');
+      }
+    } catch (e) {
+      console.warn('postMessage AppSolved nicht möglich:', e);
+    }
+  });
+
+  answerInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      checkAnswer();
+    }
+  });
+
+  // --- Trainingsstart ---
+  function startTraining() {
+    if (!selectedCategory) return;
+
+    questionsDone = 0;
+    correctAnswers = 0;
+    wrongAnswers = 0;
+    usedQuestions = [];
+
+    statCorrect.textContent = '0';
+    statTotal.textContent = TOTAL_QUESTIONS.toString();
+    statWrong.textContent = '0';
+    statCategory.textContent =
+      selectedCategory === 'length' ? 'Längen' :
+      selectedCategory === 'weight' ? 'Gewicht' : 'Volumen';
+
+    feedback.textContent = '';
+    feedback.className = 'feedback';
+
+    startScreen.classList.add('hidden');
+    resultScreen.classList.add('hidden');
+    quizScreen.classList.remove('hidden');
+
+    newQuestion();
+  }
+
+  // --- Timer ---
+  function startTimer() {
+    stopTimer();
+    timeLeft = TIME_PER_QUESTION;
+    updateProgressText();
+    timerId = setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        timeLeft = 0;
+        updateProgressText();
+        handleTimeout();
+      } else {
+        updateProgressText();
+      }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (timerId !== null) {
+      clearInterval(timerId);
+      timerId = null;
+    }
+  }
+
+  function updateProgressText() {
+    const num = Math.min(questionsDone + 1, TOTAL_QUESTIONS);
+    progressText.textContent =
+      `Aufgabe ${num} von ${TOTAL_QUESTIONS} – Zeit: ${timeLeft} s`;
+  }
+
+  function handleTimeout() {
+    stopTimer();
+    wrongAnswers++;
+    statWrong.textContent = wrongAnswers.toString();
+    feedback.textContent = 'Zeit abgelaufen. Die richtige Antwort war: ' +
+      currentQuestion.answer + ' ' + currentQuestion.to;
+    feedback.className = 'feedback error';
+
+    questionsDone++;
+    if (questionsDone >= TOTAL_QUESTIONS) {
+      setTimeout(endTraining, 800);
+    } else {
+      setTimeout(newQuestion, 800);
+    }
+  }
+
+  // --- Aufgabengenerierung ---
+  function newQuestion() {
+    feedback.textContent = '';
+    feedback.className = 'feedback';
+
+    currentQuestion = generateUniqueQuestion(selectedCategory);
+    equationText.textContent =
+      `${currentQuestion.fromValue} ${currentQuestion.from} = __ ${currentQuestion.to}`;
+    variantLabel.textContent = currentQuestion.label;
+
+    timeLeft = TIME_PER_QUESTION;
+    updateProgressText();
+    answerInput.value = '';
+    answerInput.focus();
+    startTimer();
+  }
+
+  function generateUniqueQuestion(category) {
+    const list = CONVERSIONS[category];
+    let conv, fromValue, toValue, key;
+    let tries = 0;
+
+    while (true) {
+      conv = list[randomInt(0, list.length - 1)];
+      fromValue = randomFromRange(conv.min, conv.max, conv.step);
+
+      // Berechnung
+      if (conv.op === 'mul') {
+        toValue = fromValue * conv.factor;
+      } else {
+        if (fromValue % conv.factor !== 0) {
+          tries++;
+          if (tries > 200) break;
+          continue;
+        }
+        toValue = fromValue / conv.factor;
+      }
+
+      if (!Number.isInteger(toValue)) {
+        tries++;
+        if (tries > 200) break;
+        continue;
+      }
+      if (fromValue < 0 || toValue < 0 ||
+          fromValue > MAX_VALUE || toValue > MAX_VALUE) {
+        tries++;
+        if (tries > 200) break;
+        continue;
+      }
+
+      key = `${category}-${conv.from}-${fromValue}-${conv.to}`;
+      if (!usedQuestions.includes(key)) {
+        usedQuestions.push(key);
+        break;
+      }
+
+      tries++;
+      if (tries > 200) {
+        // Notfall: keine neue Kombination gefunden – Wiederverwendung zulassen
+        break;
+      }
+    }
+
+    return {
+      from: conv.from,
+      to: conv.to,
+      op: conv.op,
+      factor: conv.factor,
+      fromValue,
+      answer: toValue,
+      label: conv.label
+    };
+  }
+
+  // --- Antworten prüfen ---
+  function checkAnswer() {
+    const value = answerInput.value.trim();
+    if (value === '') {
+      feedback.textContent = 'Bitte gib eine Zahl ein.';
+      feedback.className = 'feedback error';
+      answerInput.focus();
+      return;
+    }
+
+    const given = Number(value);
+    if (!Number.isFinite(given)) {
+      feedback.textContent = 'Das ist keine gültige Zahl.';
+      feedback.className = 'feedback error';
+      answerInput.focus();
+      return;
+    }
+
+    stopTimer();
+
+    if (given === currentQuestion.answer) {
+      correctAnswers++;
+      statCorrect.textContent = correctAnswers.toString();
+      feedback.textContent = 'Richtig! 👍';
+      feedback.className = 'feedback ok';
+    } else {
+      wrongAnswers++;
+      statWrong.textContent = wrongAnswers.toString();
+      feedback.textContent =
+        'Leider falsch. Die richtige Antwort war: ' +
+        currentQuestion.answer + ' ' + currentQuestion.to;
+      feedback.className = 'feedback error';
+    }
+
+    questionsDone++;
+    if (questionsDone >= TOTAL_QUESTIONS) {
+      setTimeout(endTraining, 800);
+    } else {
+      setTimeout(newQuestion, 800);
+    }
+  }
+
+  // --- Abschluss ---
+  function endTraining() {
+    stopTimer();
+    quizScreen.classList.add('hidden');
+    resultScreen.classList.remove('hidden');
+
+    const quote = (correctAnswers / TOTAL_QUESTIONS * 100).toFixed(0);
+    const catText =
+      selectedCategory === 'length' ? 'Längen' :
+      selectedCategory === 'weight' ? 'Gewicht' : 'Volumen';
+
+    resultSummary.innerHTML =
+      `Du hast <strong>${TOTAL_QUESTIONS}</strong> Aufgaben zu <strong>${catText}</strong> gelöst.<br>` +
+      `Davon waren <strong>${correctAnswers}</strong> richtig ` +
+      `(<strong>${quote}%</strong>).<br>` +
+      `Du hattest insgesamt <strong>${wrongAnswers}</strong> falsche Versuche (inkl. Zeitüberschreitungen).`;
+  }
+
+  // --- Hilfsfunktionen ---
+  function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function randomFromRange(min, max, step) {
+    const count = Math.floor((max - min) / step) + 1;
+    const idx = randomInt(0, count - 1);
+    return min + idx * step;
+  }
+
+  // Initialer Text
+  updateSelectedInfo();
+</script>
+</body>
+</html>
