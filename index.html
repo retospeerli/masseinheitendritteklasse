@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Masseinheiten – Selbsttest (LearningView)</title>
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .app {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      padding: 2rem 2.5rem;
+      max-width: 560px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    h1 {
+      margin-top: 0;
+      text-align: center;
+      font-size: 1.6rem;
+    }
+    .subtitle {
+      text-align: center;
+      color: #4b5563;
+      margin-bottom: 1.2rem;
+      font-size: 0.95rem;
+    }
+    .center {
+      text-align: center;
+    }
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.6rem;
+      margin: 1rem 0 0.5rem;
+    }
+    .choice-btn {
+      padding: 0.9rem 0.6rem;
+      border-radius: 16px;
+      border: 2px solid #d1d5db;
+      background: #f9fafb;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.05s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .choice-btn.selected {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #1d4ed8;
+      box-shadow: 0 5px 15px rgba(37,99,235,0.35);
+    }
+    .choice-btn:active {
+      transform: translateY(1px);
+    }
+    .selected-info {
+      font-size: 0.85rem;
+      color: #6b7280;
+      text-align: center;
+      min-height: 1.2rem;
+      margin-bottom: 0.5rem;
+    }
+    .equation {
+      font-size: 1.9rem;
+      font-weight: 600;
+      margin: 1rem 0;
+      text-align: center;
+    }
+    .progress {
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 0.7rem 0.9rem;
+      font-size: 1.2rem;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+    }
+    .primary-btn {
+      margin-top: 0.9rem;
+      width: 100%;
+      padding: 0.7rem 1rem;
+      font-size: 1.1rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+      font-weight: 600;
+      transition: transform 0.05s ease, box-shadow 0.05s ease, background 0.2s ease;
+    }
+    .primary-btn:hover {
+      background: #1d4ed8;
+    }
+    .primary-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .primary-btn:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .secondary-btn {
+      margin-top: 0.4rem;
+      width: 100%;
+      padding: 0.6rem 1rem;
+      font-size: 1rem;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      cursor: pointer;
+      background: #f9fafb;
+      color: #111827;
+      font-weight: 500;
+      transition: transform 0.05s ease, box-shadow 0.05s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+    .secondary-btn:hover {
+      background: #e5e7eb;
+      border-color: #9ca3af;
+    }
+    .secondary-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .feedback {
+      min-height: 1.4rem;
+      margin-top: 0.4rem;
+      font-weight: 500;
+      text-align: center;
+    }
+    .feedback.ok {
+      color: #15803d;
+    }
+    .feedback.error {
+      color: #b91c1c;
+    }
+    .hidden {
+      display: none;
+    }
+    .stats {
+      margin-top: 1rem;
+      font-size: 0.95rem;
+      color: #374151;
+    }
+    .tag {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 0.1rem 0.6rem;
+      font-size: 0.8rem;
+      background: #eff6ff;
+      color: #1d4ed8;
+      margin-top: 0.3rem;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <h1>Masseinheiten</h1>
+  <div class="subtitle">
+    Wähle eine Art von Masseinheiten (Länge, Gewicht oder Volumen).<br>
+    20 Aufgaben, jeweils mit 15 Sekunden Zeit.
+  </div>
+
+  <!-- Start-Bereich mit Kategorien-Auswahl -->
+  <div id="start-screen">
+    <div class="center">
+      <p>Bitte genau <strong>eine</strong> Kategorie auswählen.</p>
+    </div>
+
+    <div class="choice-grid" id="choice-grid">
+      <button type="button" class="choice-btn" data-category="length">Längen</button>
+      <button type="button" class="choice-btn" data-category="weight">Gewicht</button>
+      <button type="button" class="choice-btn" data-category="volume">Volumen</button>
+    </div>
+
+    <div class="selected-info" id="selected-info"></div>
+
+    <button class="primary-btn" id="start-btn" disabled>Los!</button>
+  </div>
+
+  <!-- Quiz-Bereich -->
+  <div id="quiz-screen" class="hidden">
+    <div class="progress" id="progress-text"></div>
+    <div class="center">
+      <div class="tag" id="variant-label"></div>
+      <div class="equation" id="equation-text">__</div>
+    </div>
+    <input type="number" id="answer-input" placeholder="Deine Antwort" autocomplete="off">
+    <button class="primary-btn" id="submit-btn">OK</button>
+    <div class="feedback" id="feedback"></div>
+    <div class="stats">
+      Richtig: <span id="stat-correct">0</span> / <span id="stat-total">20</span><br>
+      Falsche Versuche (inkl. Zeit abgelaufen): <span id="stat-wrong">0</span><br>
+      Kategorie: <span id="stat-category"></span>
+    </div>
+  </div>
+
+  <!-- Ergebnis-Bereich -->
+  <div id="result-screen" class="hidden center">
+    <h2>Fertig! 🎉</h2>
+    <p id="result-summary"></p>
+    <p style="margin-top:0.8rem; font-size:0.9rem; color:#4b5563;">
+      Wenn du mit deinem Ergebnis zufrieden bist,<br>
+      klicke auf <strong>„Fertig“</strong>, damit LearningView den Auftrag als erledigt markiert.<br>
+      Oder klicke auf <strong>„Weiter üben“</strong>, um noch einen Durchgang zu machen.
+    </p>
+    <button class="primary-btn" id="finish-btn">Fertig</button>
+    <button class="secondary-btn" id="restart-btn">Weiter üben</button>
+  </div>
+</div>
+
+<script>
+  const TOTAL_QUESTIONS = 20;
+  const TIME_PER_QUESTION = 15; // Sekunden
+  const MAX_VALUE = 9999;
+
+  let selectedCategory = null;   // 'length' | 'weight' | 'volume'
+  let currentQuestion = null;
+
+  let questionsDone = 0;         // wie viele Aufgaben gewertet
+  let correctAnswers = 0;
+  let wrongAnswers = 0;
+  let usedQuestions = [];        // Vermeidung von Wiederholungen
+
+  let timeLeft = TIME_PER_QUESTION;
+  let timerId = null;
+
+  const startScreen = document.getElementById('start-screen');
+  const quizScreen = document.getElementById('quiz-screen');
+  const resultScreen = document.getElementById('result-screen');
+
+  const choiceGrid = document.getElementById('choice-grid');
+  const selectedInfo = document.getElementById('selected-info');
+  const startBtn = document.getElementById('start-btn');
+
+  const progressText = document.getElementById('progress-text');
+  const equationText = document.getElementById('equation-text');
+  const variantLabel = document.getElementById('variant-label');
+  const answerInput = document.getElementById('answer-input');
+  const feedback = document.getElementById('feedback');
+  const statCorrect = document.getElementById('stat-correct');
+  const statTotal = document.getElementById('stat-total');
+  const statWrong = document.getElementById('stat-wrong');
+  const statCategory = document.getElementById('stat-category');
+
+  const submitBtn = document.getElementById('submit-btn');
+  const restartBtn = document.getElementById('restart-btn');
+  const finishBtn = document.getElementById('finish-btn');
+  const resultSummary = document.getElementById('result-summary');
+
+  // Definition der möglichen Umrechnungen
+  // op: 'mul' (to = from * factor) oder 'div' (to = from / factor)
+  const CONVERSIONS = {
+    length: [
+      // km <-> m
+      { from: 'km', to: 'm',   op: 'mul', factor: 1000, min: 1, ma
