@@ -222,7 +222,7 @@
     <p style="margin-top:0.8rem; font-size:0.9rem; color:#4b5563;">
       Wenn du mit deinem Ergebnis zufrieden bist,<br>
       klicke auf <strong>„Fertig“</strong>, damit LearningView den Auftrag als erledigt markiert.<br>
-      Oder klicke auf <strong>„Weiter üben“</strong>, um noch einen Durchgang zu machen.
+      Oder klicke auf <strong>„Weiter üben“</strong>, um zur Auswahl zurückzukehren.
     </p>
     <button class="primary-btn" id="finish-btn">Fertig</button>
     <button class="secondary-btn" id="restart-btn">Weiter üben</button>
@@ -269,11 +269,11 @@
     ],
     weight: [
       // t <-> kg
-      { from: 't',  to: 'kg',  op: 'mul', factor: 1000, min: 1,   max: 9,    step: 1,    label: 'Gewicht – t in kg' },
+      { from: 't',  to: 'kg',  op: 'mul', factor: 1000, min: 1,    max: 9,    step: 1,    label: 'Gewicht – t in kg' },
       { from: 'kg', to: 't',   op: 'div', factor: 1000, min: 1000, max: 9000, step: 1000, label: 'Gewicht – kg in t' },
 
       // g <-> kg
-      { from: 'kg', to: 'g',   op: 'mul', factor: 1000, min: 1,   max: 9,    step: 1,    label: 'Gewicht – kg in g' },
+      { from: 'kg', to: 'g',   op: 'mul', factor: 1000, min: 1,    max: 9,    step: 1,    label: 'Gewicht – kg in g' },
       { from: 'g',  to: 'kg',  op: 'div', factor: 1000, min: 1000, max: 9000, step: 1000, label: 'Gewicht – g in kg' }
     ],
     volume: [
@@ -371,11 +371,13 @@
   startBtn.addEventListener('click', startTraining);
   submitBtn.addEventListener('click', checkAnswer);
 
+  // WICHTIG: „Weiter üben“ führt zurück zum Startmenü
   restartBtn.addEventListener('click', () => {
     stopTimer();
     quizScreen.classList.add('hidden');
     resultScreen.classList.add('hidden');
-    startTraining(); // gleiche Kategorie, neuer Durchlauf
+    startScreen.classList.remove('hidden');
+    // Auswahl bleibt sichtbar; Kinder können gleiche oder andere Kategorie wählen
   });
 
   finishBtn.addEventListener('click', () => {
