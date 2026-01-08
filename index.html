@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Masseinheiten – Selbsttest (LearningView)</title>
   <style>
     :root {
@@ -35,9 +36,7 @@
       margin-bottom: 1.2rem;
       font-size: 0.95rem;
     }
-    .center {
-      text-align: center;
-    }
+    .center { text-align: center; }
     .choice-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -60,9 +59,8 @@
       border-color: #1d4ed8;
       box-shadow: 0 5px 15px rgba(37,99,235,0.35);
     }
-    .choice-btn:active {
-      transform: translateY(1px);
-    }
+    .choice-btn:active { transform: translateY(1px); }
+
     .selected-info {
       font-size: 0.85rem;
       color: #6b7280;
@@ -109,9 +107,7 @@
       font-weight: 600;
       transition: transform 0.05s ease, box-shadow 0.05s ease, background 0.2s ease;
     }
-    .primary-btn:hover {
-      background: #1d4ed8;
-    }
+    .primary-btn:hover { background: #1d4ed8; }
     .primary-btn:active {
       transform: translateY(1px);
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
@@ -148,15 +144,9 @@
       font-weight: 500;
       text-align: center;
     }
-    .feedback.ok {
-      color: #15803d;
-    }
-    .feedback.error {
-      color: #b91c1c;
-    }
-    .hidden {
-      display: none;
-    }
+    .feedback.ok { color: #15803d; }
+    .feedback.error { color: #b91c1c; }
+    .hidden { display: none; }
     .stats {
       margin-top: 1rem;
       font-size: 0.95rem;
@@ -177,11 +167,11 @@
 <div class="app">
   <h1>Masseinheiten</h1>
   <div class="subtitle">
-    Wähle eine Art von Masseinheiten (Länge, Gewicht oder Volumen).<br>
+    Wähle eine Kategorie.<br>
+    <strong>Fokus: gemischte Einheiten</strong> (z.B. 1 t 450 kg → kg).<br>
     20 Aufgaben, jeweils mit 15 Sekunden Zeit.
   </div>
 
-  <!-- Start-Bereich mit Kategorien-Auswahl -->
   <div id="start-screen">
     <div class="center">
       <p>Bitte genau <strong>eine</strong> Kategorie auswählen.</p>
@@ -198,7 +188,6 @@
     <button class="primary-btn" id="start-btn" disabled>Los!</button>
   </div>
 
-  <!-- Quiz-Bereich -->
   <div id="quiz-screen" class="hidden">
     <div class="progress" id="progress-text"></div>
     <div class="center">
@@ -215,7 +204,6 @@
     </div>
   </div>
 
-  <!-- Ergebnis-Bereich -->
   <div id="result-screen" class="hidden center">
     <h2>Fertig! 🎉</h2>
     <p id="result-summary"></p>
@@ -233,76 +221,19 @@
   // --- Konfiguration ---
   const TOTAL_QUESTIONS = 20;
   const TIME_PER_QUESTION = 15; // Sekunden
-  const MAX_VALUE = 9999;
-
-  // Definition der möglichen Umrechnungen (nur ganze Zahlen!)
-  // op: 'mul' (to = from * factor) oder 'div' (to = from / factor)
-  const CONVERSIONS = {
-    length: [
-      // km <-> m
-      { from: 'km', to: 'm',   op: 'mul', factor: 1000, min: 1,    max: 9,    step: 1,    label: 'Längen – km in m' },
-      { from: 'm',  to: 'km',  op: 'div', factor: 1000, min: 1000, max: 9000, step: 1000, label: 'Längen – m in km' },
-
-      // cm <-> m
-      { from: 'cm', to: 'm',   op: 'div', factor: 100,  min: 100, max: 9900, step: 100,  label: 'Längen – cm in m' },
-      { from: 'm',  to: 'cm',  op: 'mul', factor: 100,  min: 1,   max: 99,   step: 1,    label: 'Längen – m in cm' },
-
-      // dm <-> m
-      { from: 'dm', to: 'm',   op: 'div', factor: 10,   min: 10,  max: 9990, step: 10,   label: 'Längen – dm in m' },
-      { from: 'm',  to: 'dm',  op: 'mul', factor: 10,   min: 1,   max: 999,  step: 1,    label: 'Längen – m in dm' },
-
-      // mm <-> m
-      { from: 'mm', to: 'm',   op: 'div', factor: 1000, min: 1000, max: 9000, step: 1000, label: 'Längen – mm in m' },
-      { from: 'm',  to: 'mm',  op: 'mul', factor: 1000, min: 1,   max: 9,    step: 1,    label: 'Längen – m in mm' },
-
-      // dm <-> cm
-      { from: 'dm', to: 'cm',  op: 'mul', factor: 10,   min: 1,   max: 999,  step: 1,    label: 'Längen – dm in cm' },
-      { from: 'cm', to: 'dm',  op: 'div', factor: 10,   min: 10,  max: 9990, step: 10,   label: 'Längen – cm in dm' },
-
-      // mm <-> cm
-      { from: 'mm', to: 'cm',  op: 'div', factor: 10,   min: 10,  max: 9990, step: 10,   label: 'Längen – mm in cm' },
-      { from: 'cm', to: 'mm',  op: 'mul', factor: 10,   min: 1,   max: 999,  step: 1,    label: 'Längen – cm in mm' },
-
-      // dm <-> mm
-      { from: 'dm', to: 'mm',  op: 'mul', factor: 100,  min: 1,   max: 99,   step: 1,    label: 'Längen – dm in mm' },
-      { from: 'mm', to: 'dm',  op: 'div', factor: 100,  min: 100, max: 9900, step: 100,  label: 'Längen – mm in dm' }
-    ],
-    weight: [
-      // t <-> kg
-      { from: 't',  to: 'kg',  op: 'mul', factor: 1000, min: 1,    max: 9,    step: 1,    label: 'Gewicht – t in kg' },
-      { from: 'kg', to: 't',   op: 'div', factor: 1000, min: 1000, max: 9000, step: 1000, label: 'Gewicht – kg in t' },
-
-      // g <-> kg
-      { from: 'kg', to: 'g',   op: 'mul', factor: 1000, min: 1,    max: 9,    step: 1,    label: 'Gewicht – kg in g' },
-      { from: 'g',  to: 'kg',  op: 'div', factor: 1000, min: 1000, max: 9000, step: 1000, label: 'Gewicht – g in kg' }
-    ],
-    volume: [
-      // l <-> dl
-      { from: 'l',  to: 'dl',  op: 'mul', factor: 10,   min: 1,   max: 999,  step: 1,    label: 'Volumen – l in dl' },
-      { from: 'dl', to: 'l',   op: 'div', factor: 10,   min: 10,  max: 9990, step: 10,   label: 'Volumen – dl in l' },
-
-      // l <-> cl
-      { from: 'l',  to: 'cl',  op: 'mul', factor: 100,  min: 1,   max: 99,   step: 1,    label: 'Volumen – l in cl' },
-      { from: 'cl', to: 'l',   op: 'div', factor: 100,  min: 100, max: 9900, step: 100,  label: 'Volumen – cl in l' },
-
-      // l <-> ml
-      { from: 'l',  to: 'ml',  op: 'mul', factor: 1000, min: 1,   max: 9,    step: 1,    label: 'Volumen – l in ml' },
-      { from: 'ml', to: 'l',   op: 'div', factor: 1000, min: 1000, max: 9000, step: 1000, label: 'Volumen – ml in l' },
-
-      // ml <-> dl
-      { from: 'dl', to: 'ml',  op: 'mul', factor: 100,  min: 1,   max: 99,   step: 1,    label: 'Volumen – dl in ml' },
-      { from: 'ml', to: 'dl',  op: 'div', factor: 100,  min: 100, max: 9900, step: 100,  label: 'Volumen – ml in dl' }
-    ]
-  };
+  const MAX_VALUE = 999999;     // erlaubt auch g/ml-Aufgaben
+  const MIXED_WEIGHT = 0.80;    // 80% gemischt
+  const MIXED_LENGTH  = 0.75;
+  const MIXED_VOLUME  = 0.75;
 
   // --- Statusvariablen ---
-  let selectedCategory = null;   // 'length' | 'weight' | 'volume'
+  let selectedCategory = null;
   let currentQuestion = null;
 
   let questionsDone = 0;
   let correctAnswers = 0;
   let wrongAnswers = 0;
-  let usedQuestions = [];        // Strings, um Wiederholung zu vermeiden
+  let usedQuestions = []; // String-Key, um Wiederholung zu vermeiden
 
   let timeLeft = TIME_PER_QUESTION;
   let timerId = null;
@@ -331,22 +262,14 @@
   const finishBtn = document.getElementById('finish-btn');
   const resultSummary = document.getElementById('result-summary');
 
-  // --- Kategorie-Auswahl klickbar machen ---
+  // --- Kategorie-Auswahl ---
   choiceGrid.querySelectorAll('.choice-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const cat = btn.getAttribute('data-category');
-      if (selectedCategory === cat) {
-        selectedCategory = null;
-      } else {
-        selectedCategory = cat;
-      }
+      selectedCategory = (selectedCategory === cat) ? null : cat;
 
       choiceGrid.querySelectorAll('.choice-btn').forEach(b => {
-        if (b.getAttribute('data-category') === selectedCategory) {
-          b.classList.add('selected');
-        } else {
-          b.classList.remove('selected');
-        }
+        b.classList.toggle('selected', b.getAttribute('data-category') === selectedCategory);
       });
 
       updateSelectedInfo();
@@ -359,11 +282,10 @@
       startBtn.disabled = true;
       return;
     }
-    let text = '';
-    if (selectedCategory === 'length') text = 'Ausgewählte Kategorie: Längen';
-    if (selectedCategory === 'weight') text = 'Ausgewählte Kategorie: Gewicht';
-    if (selectedCategory === 'volume') text = 'Ausgewählte Kategorie: Volumen';
-    selectedInfo.textContent = text;
+    selectedInfo.textContent =
+      selectedCategory === 'length' ? 'Ausgewählte Kategorie: Längen' :
+      selectedCategory === 'weight' ? 'Ausgewählte Kategorie: Gewicht' :
+      'Ausgewählte Kategorie: Volumen';
     startBtn.disabled = false;
   }
 
@@ -371,17 +293,14 @@
   startBtn.addEventListener('click', startTraining);
   submitBtn.addEventListener('click', checkAnswer);
 
-  // WICHTIG: „Weiter üben“ führt zurück zum Startmenü
   restartBtn.addEventListener('click', () => {
     stopTimer();
     quizScreen.classList.add('hidden');
     resultScreen.classList.add('hidden');
     startScreen.classList.remove('hidden');
-    // Auswahl bleibt sichtbar; Kinder können gleiche oder andere Kategorie wählen
   });
 
   finishBtn.addEventListener('click', () => {
-    // LearningView informieren
     try {
       if (window.parent && window.parent !== window) {
         window.parent.postMessage('AppSolved', '*');
@@ -392,9 +311,7 @@
   });
 
   answerInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      checkAnswer();
-    }
+    if (e.key === 'Enter') checkAnswer();
   });
 
   // --- Trainingsstart ---
@@ -449,8 +366,7 @@
 
   function updateProgressText() {
     const num = Math.min(questionsDone + 1, TOTAL_QUESTIONS);
-    progressText.textContent =
-      `Aufgabe ${num} von ${TOTAL_QUESTIONS} – Zeit: ${timeLeft} s`;
+    progressText.textContent = `Aufgabe ${num} von ${TOTAL_QUESTIONS} – Zeit: ${timeLeft} s`;
   }
 
   function handleTimeout() {
@@ -462,11 +378,8 @@
     feedback.className = 'feedback error';
 
     questionsDone++;
-    if (questionsDone >= TOTAL_QUESTIONS) {
-      setTimeout(endTraining, 800);
-    } else {
-      setTimeout(newQuestion, 800);
-    }
+    if (questionsDone >= TOTAL_QUESTIONS) setTimeout(endTraining, 800);
+    else setTimeout(newQuestion, 800);
   }
 
   // --- Aufgabengenerierung ---
@@ -475,72 +388,227 @@
     feedback.className = 'feedback';
 
     currentQuestion = generateUniqueQuestion(selectedCategory);
-    equationText.textContent =
-      `${currentQuestion.fromValue} ${currentQuestion.from} = __ ${currentQuestion.to}`;
+
+    // Anzeige: gemischte Aufgaben haben "fromText"
+    equationText.textContent = `${currentQuestion.fromText} = __ ${currentQuestion.to}`;
     variantLabel.textContent = currentQuestion.label;
 
-    timeLeft = TIME_PER_QUESTION;
-    updateProgressText();
     answerInput.value = '';
     answerInput.focus();
     startTimer();
   }
 
   function generateUniqueQuestion(category) {
-    const list = CONVERSIONS[category];
-    let conv, fromValue, toValue, key;
-    let tries = 0;
+    let q, key, tries = 0;
 
     while (true) {
-      conv = list[randomInt(0, list.length - 1)];
-      fromValue = randomFromRange(conv.min, conv.max, conv.step);
+      q = (category === 'weight') ? genWeightQuestion()
+        : (category === 'length') ? genLengthQuestion()
+        : genVolumeQuestion();
 
-      // Berechnung
-      if (conv.op === 'mul') {
-        toValue = fromValue * conv.factor;
-      } else {
-        if (fromValue % conv.factor !== 0) {
-          tries++;
-          if (tries > 200) break;
-          continue;
-        }
-        toValue = fromValue / conv.factor;
+      // Grenzen
+      if (!Number.isInteger(q.answer) || q.answer < 0 || q.answer > MAX_VALUE) {
+        tries++; if (tries > 400) break; else continue;
       }
 
-      if (!Number.isInteger(toValue)) {
-        tries++;
-        if (tries > 200) break;
-        continue;
-      }
-      if (fromValue < 0 || toValue < 0 ||
-          fromValue > MAX_VALUE || toValue > MAX_VALUE) {
-        tries++;
-        if (tries > 200) break;
-        continue;
-      }
-
-      key = `${category}-${conv.from}-${fromValue}-${conv.to}`;
+      key = `${category}|${q.fromText}|${q.to}|${q.answer}`;
       if (!usedQuestions.includes(key)) {
         usedQuestions.push(key);
         break;
       }
 
       tries++;
-      if (tries > 200) {
-        // Notfall: keine neue Kombination gefunden – Wiederverwendung zulassen
-        break;
+      if (tries > 400) break; // Notfall: Wiederholung zulassen
+    }
+    return q;
+  }
+
+  // -------------------------
+  // GEMISCHT-Generatoren
+  // -------------------------
+
+  // Gewicht: Fokus auf t+kg -> kg und kg+g -> g
+  function genWeightQuestion() {
+    const mixed = Math.random() < MIXED_WEIGHT;
+
+    if (mixed) {
+      // zufällig eines der Misch-Formate
+      if (Math.random() < 0.55) {
+        // t + kg -> kg (Beispiel: 1 t 450 kg = ? kg)
+        const t = randomInt(0, 9);
+        const kg = randomInt(0, 999);
+        // vermeide 0 t 0 kg
+        if (t === 0 && kg === 0) return genWeightQuestion();
+
+        const totalKg = t * 1000 + kg;
+        if (totalKg > 9999) return genWeightQuestion(); // bleibt im 4-stelligen kg-Raum
+
+        return {
+          fromText: `${t} t ${kg} kg`,
+          to: 'kg',
+          answer: totalKg,
+          label: 'Gemischt: t + kg → kg'
+        };
+      } else {
+        // kg + g -> g (z.B. 3 kg 25 g = ? g)
+        const kg = randomInt(0, 9);
+        const g = randomInt(0, 999);
+        if (kg === 0 && g === 0) return genWeightQuestion();
+
+        const totalG = kg * 1000 + g; // bis 9999 g bei 9 kg 999 g = 9999 g
+        return {
+          fromText: `${kg} kg ${g} g`,
+          to: 'g',
+          answer: totalG,
+          label: 'Gemischt: kg + g → g'
+        };
       }
     }
 
-    return {
-      from: conv.from,
-      to: conv.to,
-      op: conv.op,
-      factor: conv.factor,
-      fromValue,
-      answer: toValue,
-      label: conv.label
-    };
+    // einfache Aufgaben (selten)
+    const simple = [
+      () => {
+        const t = randomInt(1, 9);
+        return { fromText: `${t} t`, to: 'kg', answer: t * 1000, label: 'Einfach: t → kg' };
+      },
+      () => {
+        const kg = randomInt(1, 9);
+        return { fromText: `${kg} kg`, to: 'g', answer: kg * 1000, label: 'Einfach: kg → g' };
+      },
+      () => {
+        const g = randomFromStep(1000, 9000, 1000);
+        return { fromText: `${g} g`, to: 'kg', answer: g / 1000, label: 'Einfach: g → kg' };
+      }
+    ];
+    return simple[randomInt(0, simple.length - 1)]();
+  }
+
+  // Länge: Fokus auf km+m -> m, m+cm -> cm, m+mm -> mm
+  function genLengthQuestion() {
+    const mixed = Math.random() < MIXED_LENGTH;
+
+    if (mixed) {
+      const r = Math.random();
+
+      if (r < 0.45) {
+        // km + m -> m (z.B. 2 km 35 m = ? m)
+        const km = randomInt(0, 9);
+        const m = randomInt(0, 999);
+        if (km === 0 && m === 0) return genLengthQuestion();
+        const totalM = km * 1000 + m;
+        return {
+          fromText: `${km} km ${m} m`,
+          to: 'm',
+          answer: totalM,
+          label: 'Gemischt: km + m → m'
+        };
+      } else if (r < 0.75) {
+        // m + cm -> cm (z.B. 3 m 7 cm = ? cm)
+        const m = randomInt(0, 99);
+        const cm = randomInt(0, 99);
+        if (m === 0 && cm === 0) return genLengthQuestion();
+        const totalCm = m * 100 + cm;
+        return {
+          fromText: `${m} m ${cm} cm`,
+          to: 'cm',
+          answer: totalCm,
+          label: 'Gemischt: m + cm → cm'
+        };
+      } else {
+        // m + mm -> mm (z.B. 4 m 12 mm = ? mm)
+        const m = randomInt(0, 9);
+        const mm = randomInt(0, 999);
+        if (m === 0 && mm === 0) return genLengthQuestion();
+        const totalMm = m * 1000 + mm;
+        return {
+          fromText: `${m} m ${mm} mm`,
+          to: 'mm',
+          answer: totalMm,
+          label: 'Gemischt: m + mm → mm'
+        };
+      }
+    }
+
+    // einfache Aufgaben (selten)
+    const simple = [
+      () => {
+        const km = randomInt(1, 9);
+        return { fromText: `${km} km`, to: 'm', answer: km * 1000, label: 'Einfach: km → m' };
+      },
+      () => {
+        const m = randomInt(1, 99);
+        return { fromText: `${m} m`, to: 'cm', answer: m * 100, label: 'Einfach: m → cm' };
+      },
+      () => {
+        const cm = randomFromStep(100, 9900, 100);
+        return { fromText: `${cm} cm`, to: 'm', answer: cm / 100, label: 'Einfach: cm → m' };
+      }
+    ];
+    return simple[randomInt(0, simple.length - 1)]();
+  }
+
+  // Volumen: Fokus auf l+ml -> ml, l+dl -> ml, dl+ml -> ml
+  function genVolumeQuestion() {
+    const mixed = Math.random() < MIXED_VOLUME;
+
+    if (mixed) {
+      const r = Math.random();
+
+      if (r < 0.45) {
+        // l + ml -> ml (z.B. 2 l 35 ml = ? ml)
+        const l = randomInt(0, 9);
+        const ml = randomInt(0, 999);
+        if (l === 0 && ml === 0) return genVolumeQuestion();
+        const totalMl = l * 1000 + ml;
+        return {
+          fromText: `${l} l ${ml} ml`,
+          to: 'ml',
+          answer: totalMl,
+          label: 'Gemischt: l + ml → ml'
+        };
+      } else if (r < 0.75) {
+        // l + dl -> ml (z.B. 3 l 4 dl = ? ml)
+        const l = randomInt(0, 9);
+        const dl = randomInt(0, 9);
+        if (l === 0 && dl === 0) return genVolumeQuestion();
+        const totalMl = l * 1000 + dl * 100;
+        return {
+          fromText: `${l} l ${dl} dl`,
+          to: 'ml',
+          answer: totalMl,
+          label: 'Gemischt: l + dl → ml'
+        };
+      } else {
+        // dl + ml -> ml (z.B. 7 dl 25 ml = ? ml)
+        const dl = randomInt(0, 9);
+        const ml = randomInt(0, 99);
+        if (dl === 0 && ml === 0) return genVolumeQuestion();
+        const totalMl = dl * 100 + ml;
+        return {
+          fromText: `${dl} dl ${ml} ml`,
+          to: 'ml',
+          answer: totalMl,
+          label: 'Gemischt: dl + ml → ml'
+        };
+      }
+    }
+
+    // einfache Aufgaben (selten)
+    const simple = [
+      () => {
+        const l = randomInt(1, 9);
+        return { fromText: `${l} l`, to: 'ml', answer: l * 1000, label: 'Einfach: l → ml' };
+      },
+      () => {
+        const dl = randomInt(1, 9);
+        return { fromText: `${dl} dl`, to: 'ml', answer: dl * 100, label: 'Einfach: dl → ml' };
+      },
+      () => {
+        const ml = randomFromStep(100, 900, 100);
+        return { fromText: `${ml} ml`, to: 'dl', answer: ml / 100, label: 'Einfach: ml → dl' };
+      }
+    ];
+    return simple[randomInt(0, simple.length - 1)]();
   }
 
   // --- Antworten prüfen ---
@@ -571,18 +639,14 @@
     } else {
       wrongAnswers++;
       statWrong.textContent = wrongAnswers.toString();
-      feedback.textContent =
-        'Leider falsch. Die richtige Antwort war: ' +
+      feedback.textContent = 'Leider falsch. Die richtige Antwort war: ' +
         currentQuestion.answer + ' ' + currentQuestion.to;
       feedback.className = 'feedback error';
     }
 
     questionsDone++;
-    if (questionsDone >= TOTAL_QUESTIONS) {
-      setTimeout(endTraining, 800);
-    } else {
-      setTimeout(newQuestion, 800);
-    }
+    if (questionsDone >= TOTAL_QUESTIONS) setTimeout(endTraining, 800);
+    else setTimeout(newQuestion, 800);
   }
 
   // --- Abschluss ---
@@ -607,11 +671,9 @@
   function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
-
-  function randomFromRange(min, max, step) {
+  function randomFromStep(min, max, step) {
     const count = Math.floor((max - min) / step) + 1;
-    const idx = randomInt(0, count - 1);
-    return min + idx * step;
+    return min + randomInt(0, count - 1) * step;
   }
 
   // Initialer Text
